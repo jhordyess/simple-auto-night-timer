@@ -7,9 +7,9 @@ const relayPin = 6;
 void setup(){
   Serial.begin(9600);
   if(!rtc.begin()) {
-     Serial.println("Couldn't find RTC!");
-     Serial.flush();
-     while (1) delay(10);
+    Serial.println("Couldn't find RTC!");
+    Serial.flush();
+    while (1) delay(10);
   }
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);
