@@ -2,6 +2,7 @@
 #include <RTClib.h>
 
 RTC_DS3231 rtc;
+const relayPin = 6;
 
 void setup(){
   Serial.begin(9600);
@@ -10,6 +11,8 @@ void setup(){
      Serial.flush();
      while (1) delay(10);
   }
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
 }
 
 void loop(){
@@ -28,6 +31,12 @@ void loop(){
   Serial.print(':');
   Serial.print(now.second(), DEC);
   Serial.println();
+  
+  if(now.hour() == 18 && now.minute() == 30){
+    digitalWrite(relayPin, HIGH);
+  } else {
+    digitalWrite(relayPin, LOW);
+  }
   
   delay(1000);
 }
