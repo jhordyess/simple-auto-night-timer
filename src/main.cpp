@@ -1,10 +1,13 @@
-
 #include <Arduino.h>
 #include <RTClib.h>
 #include <SPI.h>
 
 RTC_DS3231 rtc;
-int relayPin = 6;
+int relayPin = 8;
+
+boolean compare(DateTime now) {
+  return now.hour() >= 19 || now.hour() <= 23;
+}
 
 void setup() {
   Serial.begin(9600);
@@ -14,13 +17,13 @@ void setup() {
     while (1)
       delay(10);
   }
+  // rtc.adjust(DateTime(__DATE__, __TIME__));
   pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, LOW);
+  digitalWrite(relayPin, HIGH);
 }
 
 void loop() {
   DateTime now = rtc.now();
-
   Serial.print(now.year(), DEC);
   Serial.print('/');
   Serial.print(now.month(), DEC);
@@ -35,11 +38,10 @@ void loop() {
   Serial.print(now.second(), DEC);
   Serial.println();
 
-  if (now.hour() == 18 && now.minute() == 30) {
-    digitalWrite(relayPin, HIGH);
-  } else {
+  if (compare(now)) {
     digitalWrite(relayPin, LOW);
+  } else {
+    digitalWrite(relayPin, HIGH);
   }
-
   delay(1000);
 }
