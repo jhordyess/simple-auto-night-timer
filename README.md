@@ -2,28 +2,32 @@
 
 Simple automatic night timer with Arduino Uno, for Christmas lights 🎄🎄🎄
 
-## Dev Info
+## Requirements
 
-- Arduino Uno R3
-- Real Time Clock Module
+### Hardware
+
+To build this device, the following items are required:
+
+- Arduino microcontroller (Arduino UNO R3 was used)
+- Real Time Clock Module  (DS3231 model was used)
+
+### Software
+
+This project requires the following libraries to run:
+
 - [RTClib by Adafruit Industries](https://registry.platformio.org/libraries/adafruit/RTClib)
-- [PlatformIO Core (CLI)](https://docs.platformio.org/en/latest/core/index.html#platformio-core-cli)
-- VSCode with [remote containers](https://code.visualstudio.com/docs/remote/containers)
 
-## My useful PlatformIO commands
+### Developer Notes
 
-```bash
-# Initialize project for Arduino Uno R3
-pio project init --board uno --ide vscode
-# Build
-pio run
-# Upload
-pio run -t upload
-# Connect to the serial port monitor
-pio device monitor
-# Enable serial port permissions for linux
-sudo chmod o+rw /dev/ttyACM0
-```
+- Developed using [Visual Studio Code with development containers](https://code.visualstudio.com/docs/devcontainers/containers)(optional). With custom [devcontainer](https://gist.github.com/jhordyess/07f126d2017bb99bcfca9cffc62162bc) configuration file.
+- Developed using the [PlatformIO extension](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide).
+- If you are running in Linux, you could also need the correct permission ```sudo chmod o+rw /dev/ttyACM0```.
+
+### To-Do
+
+- Add features section.
+- Add installation steps.
+- Add more to-do's.
 
 ## License
 
