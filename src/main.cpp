@@ -67,13 +67,11 @@ void setup() {
   Serial.println("Ready to go!");
   Serial.println("Turn at " + String(MINIMUM_HOUR) + " - " + String(MAXIMUM_HOUR));
   delay(1000);
+  lcdDisplay.clear();
 }
 
 void loop() {
-  lcdDisplay.clear();
-  lcdDisplay.setCursor(0, 0);
-
-  char date[16] = "DDD,DD-MMM-YYYY";
+  char date[16] = "DDD MMM DD YYYY";
   char time[9] = "hh:mm:ss";
   DateTime currentTime = realTimeClock.now();
   currentTime.toString(date);
@@ -81,19 +79,19 @@ void loop() {
 
   lcdDisplay.setCursor(0, 0);
   lcdDisplay.print(date);
-  lcdDisplay.setCursor(0, 1);
+  lcdDisplay.setCursor(2, 1);
   lcdDisplay.print(time);
   Serial.println(date);
   Serial.println(time);
 
   if (isHourInRange(currentTime)) {
     digitalWrite(RELAY_PIN, LOW);
-    lcdDisplay.setCursor(11, 1);
-    lcdDisplay.print("ON");
+    lcdDisplay.setCursor(13, 1);
+    lcdDisplay.print(" ON");
     Serial.println("ON");
   } else {
     digitalWrite(RELAY_PIN, HIGH);
-    lcdDisplay.setCursor(11, 1);
+    lcdDisplay.setCursor(13, 1);
     lcdDisplay.print("OFF");
     Serial.println("OFF");
   }
