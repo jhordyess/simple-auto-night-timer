@@ -36,6 +36,7 @@ bool isInConfigMode = false;
 bool forceRelayOn = false;
 bool isInMinimunHourConfig = false;
 bool isInMaximumHourConfig = false;
+bool isDateTimeConfig = false;
 
 void setup() {
   Serial.begin(9600);
@@ -105,12 +106,20 @@ void loop() {
         forceRelayOn = false;
         isInMinimunHourConfig = false;
         isInMaximumHourConfig = false;
+        isDateTimeConfig = false;
+        if (minimumHour != EEPROM.read(0)) {
+          EEPROM.write(0, minimumHour);
+        }
+        if (maximumHour != EEPROM.read(1)) {
+          EEPROM.write(1, maximumHour);
+        }
       }
 
       else if (irManager.isBtn1()) {
         if (!isInMinimunHourConfig) {
           isInMinimunHourConfig = true;
           isInMaximumHourConfig = false;
+          isDateTimeConfig = false;
           configMessage("Minimum hour", String(minimumHour).c_str());
         }
         //...
@@ -120,7 +129,18 @@ void loop() {
         if (!isInMaximumHourConfig) {
           isInMaximumHourConfig = true;
           isInMinimunHourConfig = false;
+          isDateTimeConfig = false;
           configMessage("Maximum hour");
+        }
+        //...
+      }
+
+      else if (irManager.isBtn3()) {
+        if (!isDateTimeConfig) {
+          isDateTimeConfig = true;
+          isInMinimunHourConfig = false;
+          isInMaximumHourConfig = false;
+          configMessage("Date time config");
         }
         //...
       }
@@ -138,15 +158,14 @@ void loop() {
             minimumHour = 23;
           }
           configMessage("Minimum hour", String(minimumHour).c_str());
-          EEPROM.write(0, minimumHour);
         } else if (isInMaximumHourConfig) {
           maximumHour--;
           if (maximumHour < 0) {
             maximumHour = 23;
           }
           configMessage("Maximum hour", String(maximumHour).c_str());
-          EEPROM.write(1, maximumHour);
         }
+        //...
       }
 
       else if (irManager.isBtnRight()) {
@@ -157,15 +176,14 @@ void loop() {
             minimumHour = 0;
           }
           configMessage("Minimum hour", String(minimumHour).c_str());
-          EEPROM.write(0, minimumHour);
         } else if (isInMaximumHourConfig) {
           maximumHour++;
           if (maximumHour > 23) {
             maximumHour = 0;
           }
           configMessage("Maximum hour", String(maximumHour).c_str());
-          EEPROM.write(1, maximumHour);
         }
+        //...
       }
 
       rtcManager.startStopWatch();
@@ -180,6 +198,13 @@ void loop() {
       forceRelayOn = false;
       isInMinimunHourConfig = false;
       isInMaximumHourConfig = false;
+      isDateTimeConfig = false;
+      if (minimumHour != EEPROM.read(0)) {
+        EEPROM.write(0, minimumHour);
+      }
+      if (maximumHour != EEPROM.read(1)) {
+        EEPROM.write(1, maximumHour);
+      }
     }
   }
 
