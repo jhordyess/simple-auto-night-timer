@@ -10,7 +10,7 @@ It is a simple project that allows you to turn on and off the Christmas lights a
 
 To build this device, the following components are required:
 
-- Arduino board (Arduino UNO R3 was used)
+- Arduino Pro Mini
 - Real Time Clock Module  (DS3231 model was used)
 - LCD Display (16x2) with I2C module (PCF8574 model was used)
 
