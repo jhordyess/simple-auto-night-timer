@@ -1,98 +1,63 @@
 #include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
-#include <RTClib.h>
-#include <SPI.h>
+#include "LCDManager.h"
+#include "RTCManager.h"
 
 const int LCD_ADDRESS = 0x3F;
 const int LCD_COLUMNS = 16;
 const int LCD_ROWS = 2;
-const int RELAY_PIN = 8;
+const int RELAY_PIN = 9;
 const int MINIMUM_HOUR = 19;
 const int MAXIMUM_HOUR = 22;
 
-RTC_DS3231 realTimeClock;
-LiquidCrystal_I2C lcdDisplay(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+LCDManager lcdManager(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
 
-boolean isHourInRange(DateTime currentTime) {
-  int currentHour = currentTime.hour();
-  return (currentHour >= MINIMUM_HOUR && currentHour < MAXIMUM_HOUR);
+void configMessage(const char *message) {
+  Serial.println(message);
+  lcdManager.displayConfigMsg(message);
+  delay(750);
 }
 
-void initializeLCD() {
-  lcdDisplay.init();
-  lcdDisplay.backlight();
-  lcdDisplay.setCursor(0, 0);
-  lcdDisplay.print("Initializing...");
-  delay(500);
-  lcdDisplay.clear();
+void configMessage(const char *message, const char *secondMessage) {
+  Serial.println(message);
+  Serial.println(secondMessage);
+  lcdManager.displayConfigMsg(message, secondMessage);
+  delay(750);
 }
 
-void initializeRTC() {
-  lcdDisplay.setCursor(0, 0);
-  if (!realTimeClock.begin()) {
-    lcdDisplay.print("Time unknown!");
-    Serial.println("Time unknown!");
-    Serial.flush();
-    while (1)
-      delay(10);
-  } else {
-    lcdDisplay.print("Time ok");
-    Serial.println("Time ok");
-    delay(500);
-  }
-
-  lcdDisplay.clear();
-  lcdDisplay.setCursor(0, 0);
-  if (realTimeClock.lostPower()) {
-    lcdDisplay.print("RTC lost power");
-    Serial.println("RTC lost power");
-    realTimeClock.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
-
-  realTimeClock.disable32K();
-}
+RTCManager rtcManager(configMessage);
 
 void setup() {
   Serial.begin(9600);
-  initializeLCD();
-  initializeRTC();
+  Serial.println("Starting... LCD");
+  lcdManager.initialize();
 
+  configMessage("Starting... RTC");
+  rtcManager.initialize();
+
+  configMessage("Starting... Relay");
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH);
 
-  lcdDisplay.setCursor(0, 0);
-  lcdDisplay.print("Ready to go!");
-  lcdDisplay.setCursor(0, 1);
-  lcdDisplay.print("Turn at " + String(MINIMUM_HOUR) + " - " + String(MAXIMUM_HOUR));
-  Serial.println("Ready to go!");
-  Serial.println("Turn at " + String(MINIMUM_HOUR) + " - " + String(MAXIMUM_HOUR));
-  delay(1000);
-  lcdDisplay.clear();
+  const String message = "Turn at " + String(MINIMUM_HOUR) + " - " + String(MAXIMUM_HOUR);
+  configMessage("Ready to go!", message.c_str());
+  lcdManager.clear();
 }
 
 void loop() {
-  char date[16] = "DDD MMM DD YYYY";
-  char time[9] = "hh:mm:ss";
-  DateTime currentTime = realTimeClock.now();
-  currentTime.toString(date);
-  currentTime.toString(time);
+  char date[16] = "DDD MMM DD YYYY", time[9] = "hh:mm:ss";
+  rtcManager.getCurrentDateTime(date, time);
 
-  lcdDisplay.setCursor(0, 0);
-  lcdDisplay.print(date);
-  lcdDisplay.setCursor(2, 1);
-  lcdDisplay.print(time);
+  lcdManager.displayDateTime(date, time);
   Serial.println(date);
   Serial.println(time);
 
-  if (isHourInRange(currentTime)) {
+  if (rtcManager.isHourInRange(MINIMUM_HOUR, MAXIMUM_HOUR)) {
     digitalWrite(RELAY_PIN, LOW);
-    lcdDisplay.setCursor(13, 1);
-    lcdDisplay.print(" ON");
+    lcdManager.displayStatus(" ON");
     Serial.println("ON");
   } else {
     digitalWrite(RELAY_PIN, HIGH);
-    lcdDisplay.setCursor(13, 1);
-    lcdDisplay.print("OFF");
+    lcdManager.displayStatus("OFF");
     Serial.println("OFF");
   }
   delay(500);
