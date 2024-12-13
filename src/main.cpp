@@ -125,7 +125,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtn3()) {
+      else if (irManager.isBtn4()) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
         digitalWrite(RELAY_PIN, forceRelayOn ? LOW : HIGH);
