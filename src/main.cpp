@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "LCDManager.h"
 #include "RTCManager.h"
 #include "IRManager.h"
@@ -29,25 +30,39 @@ void configMessage(const char *message, const char *secondMessage) {
 RTCManager rtcManager(configMessage);
 IRManager irManager(RECV_PIN);
 
-int minimumHour = MINIMUM_HOUR;
-int maximumHour = MAXIMUM_HOUR;
-bool forceRelayOn = false;   // ok
-bool isInConfigMode = false; // ok
+int minimumHour;
+int maximumHour;
+bool isInConfigMode = false;
+bool forceRelayOn = false;
+bool isInMinimunHourConfig = false;
+bool isInMaximumHourConfig = false;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Starting... LCD");
+  Serial.println("Init... LCD");
   lcdManager.initialize();
 
-  configMessage("Starting... RTC");
+  configMessage("Init... RTC");
   rtcManager.initialize();
 
-  configMessage("Starting... Relay");
+  configMessage("Init... Relay");
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH);
 
-  configMessage("Starting... IR");
+  configMessage("Init... IR");
   irManager.initialize();
+
+  configMessage("Init... EEPROM");
+  minimumHour = EEPROM.read(0);
+  maximumHour = EEPROM.read(1);
+
+  // If EEPROM values are not set, use default values
+  if (minimumHour == 255) {
+    minimumHour = MINIMUM_HOUR;
+  }
+  if (maximumHour == 255) {
+    maximumHour = MAXIMUM_HOUR;
+  }
 
   const String message = "Turn at " + String(minimumHour) + " - " + String(maximumHour);
   configMessage("Ready to go!", message.c_str());
@@ -60,17 +75,17 @@ void loop() {
     rtcManager.getCurrentDateTime(date, time);
 
     lcdManager.displayDateTime(date, time);
-    // Serial.println(date);
-    // Serial.println(time);
+    Serial.println(date);
+    Serial.println(time);
 
     if (rtcManager.isHourInRange(minimumHour, maximumHour)) {
       digitalWrite(RELAY_PIN, LOW);
       lcdManager.displayStatus(" ON");
-      // Serial.println("ON");
+      Serial.println("ON");
     } else {
       digitalWrite(RELAY_PIN, HIGH);
       lcdManager.displayStatus("OFF");
-      // Serial.println("OFF");
+      Serial.println("OFF");
     }
 
     if (irManager.decode()) {
@@ -84,16 +99,73 @@ void loop() {
   } else {
     if (irManager.decode()) {
       if (irManager.isBtnAsterisk()) {
-        isInConfigMode = false;
         configMessage("Normal mode");
         rtcManager.resetStopWatch();
+        isInConfigMode = false;
         forceRelayOn = false;
+        isInMinimunHourConfig = false;
+        isInMaximumHourConfig = false;
       }
 
-      if (irManager.isBtn3()) {
+      else if (irManager.isBtn1()) {
+        if (!isInMinimunHourConfig) {
+          isInMinimunHourConfig = true;
+          isInMaximumHourConfig = false;
+          configMessage("Minimum hour", String(minimumHour).c_str());
+        }
+        //...
+      }
+
+      else if (irManager.isBtn2()) {
+        if (!isInMaximumHourConfig) {
+          isInMaximumHourConfig = true;
+          isInMinimunHourConfig = false;
+          configMessage("Maximum hour");
+        }
+        //...
+      }
+
+      else if (irManager.isBtn3()) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
         digitalWrite(RELAY_PIN, forceRelayOn ? LOW : HIGH);
+      }
+
+      else if (irManager.isBtnLeft()) {
+        if (isInMinimunHourConfig) {
+          minimumHour--;
+          if (minimumHour < 0) {
+            minimumHour = 23;
+          }
+          configMessage("Minimum hour", String(minimumHour).c_str());
+          EEPROM.write(0, minimumHour);
+        } else if (isInMaximumHourConfig) {
+          maximumHour--;
+          if (maximumHour < 0) {
+            maximumHour = 23;
+          }
+          configMessage("Maximum hour", String(maximumHour).c_str());
+          EEPROM.write(1, maximumHour);
+        }
+      }
+
+      else if (irManager.isBtnRight()) {
+        if (isInMinimunHourConfig) {
+          minimumHour++;
+          if (minimumHour > 23) {
+            // TODO: Improve comparing with the maximumHour..
+            minimumHour = 0;
+          }
+          configMessage("Minimum hour", String(minimumHour).c_str());
+          EEPROM.write(0, minimumHour);
+        } else if (isInMaximumHourConfig) {
+          maximumHour++;
+          if (maximumHour > 23) {
+            maximumHour = 0;
+          }
+          configMessage("Maximum hour", String(maximumHour).c_str());
+          EEPROM.write(1, maximumHour);
+        }
       }
 
       rtcManager.startStopWatch();
@@ -102,10 +174,12 @@ void loop() {
 
     // Exit config mode after 10 seconds
     if (rtcManager.getElapsedStopWatchTime() > 10) {
-      isInConfigMode = false;
       configMessage("Normal mode");
       rtcManager.resetStopWatch();
+      isInConfigMode = false;
       forceRelayOn = false;
+      isInMinimunHourConfig = false;
+      isInMaximumHourConfig = false;
     }
   }
 
