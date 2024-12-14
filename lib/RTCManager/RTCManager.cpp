@@ -32,17 +32,27 @@ bool RTCManager::isHourInRange(int minimumHour, int maximumHour) {
   return (currentHour >= minimumHour && currentHour < maximumHour);
 }
 
-void RTCManager::getDateTime(int *year, int *month, int *day, int *hour, int *minute) {
+void RTCManager::getDate(int *year, int *month, int *day) {
   DateTime currentTime = rtc.now();
   *year = currentTime.year();
   *month = currentTime.month();
   *day = currentTime.day();
+}
+
+void RTCManager::getTime(int *hour, int *minute) {
+  DateTime currentTime = rtc.now();
   *hour = currentTime.hour();
   *minute = currentTime.minute();
 }
 
-void RTCManager::setDateTime(int year, int month, int day, int hour, int minute) {
-  rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+void RTCManager::setDate(int year, int month, int day) {
+  DateTime currentTime = rtc.now();
+  rtc.adjust(DateTime(year, month, day, currentTime.hour(), currentTime.minute(), currentTime.second()));
+}
+
+void RTCManager::setTime(int hour, int minute) {
+  DateTime currentTime = rtc.now();
+  rtc.adjust(DateTime(currentTime.year(), currentTime.month(), currentTime.day(), hour, minute, 0));
 }
 
 void RTCManager::startStopWatch() {

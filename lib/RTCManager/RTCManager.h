@@ -13,8 +13,10 @@ public:
   void getCurrentDateTime(char *date, char *time);
   bool isHourInRange(int minimumHour, int maximumHour);
 
-  void getDateTime(int *year, int *month, int *day, int *hour, int *minute);
-  void setDateTime(int year, int month, int day, int hour, int minute);
+  void getDate(int *year, int *month, int *day);
+  void getTime(int *hour, int *minute);
+  void setDate(int year, int month, int day);
+  void setTime(int hour, int minute);
 
   void startStopWatch();
   void resetStopWatch();
