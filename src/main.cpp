@@ -403,6 +403,5 @@ void loop() {
       isDateConfig = isYearConfig = isMonthConfig = isDayConfig = false;
       isTimeConfig = isHourConfig = isMinuteConfig = false;
     }
-    delay(10);
   }
 }
