@@ -30,13 +30,13 @@ void configMessage(const char *message, const char *secondMessage) {
 RTCManager rtcManager(configMessage);
 IRManager irManager(RECV_PIN);
 
-int minimumHour;
-int maximumHour;
+int minimumHour, maximumHour;
 bool isInConfigMode = false;
 bool forceRelayOn = false;
 bool isInMinimunHourConfig = false;
 bool isInMaximumHourConfig = false;
 bool isDateTimeConfig = false;
+int year, month, day, hour, minute, second;
 
 void setup() {
   Serial.begin(9600);
@@ -100,18 +100,20 @@ void loop() {
   } else {
     if (irManager.decode()) {
       if (irManager.isBtnAsterisk()) {
-        configMessage("Normal mode");
-        rtcManager.resetStopWatch();
-        isInConfigMode = false;
-        forceRelayOn = false;
-        isInMinimunHourConfig = false;
-        isInMaximumHourConfig = false;
-        isDateTimeConfig = false;
-        if (minimumHour != EEPROM.read(0)) {
-          EEPROM.write(0, minimumHour);
-        }
-        if (maximumHour != EEPROM.read(1)) {
-          EEPROM.write(1, maximumHour);
+        if (isInMinimunHourConfig) {
+          isDateTimeConfig = false;
+          configMessage("Config mode");
+        } else if (isInMaximumHourConfig) {
+          isDateTimeConfig = false;
+          configMessage("Config mode");
+        } else if (isDateTimeConfig) {
+          isDateTimeConfig = false;
+          configMessage("Config mode");
+        } else {
+          configMessage("Normal mode");
+          rtcManager.resetStopWatch();
+          isInConfigMode = false;
+          forceRelayOn = false;
         }
       }
 
@@ -186,6 +188,31 @@ void loop() {
         //...
       }
 
+      else if (irManager.isBtnOk()) {
+        if (isInMinimunHourConfig) {
+          if (minimumHour != EEPROM.read(0)) {
+            EEPROM.write(0, minimumHour);
+            configMessage("Minimum hour", "Done!");
+            isInMinimunHourConfig = false;
+          } else {
+            configMessage("Minimum hour", "No changes");
+          }
+          configMessage("Config mode");
+        } else if (isInMaximumHourConfig) {
+          if (maximumHour != EEPROM.read(1)) {
+            EEPROM.write(1, maximumHour);
+            configMessage("Maximum hour", "Done!");
+            isInMaximumHourConfig = false;
+          } else {
+            configMessage("Maximum hour", "No changes");
+          }
+          configMessage("Config mode");
+        } else if (isDateTimeConfig) {
+          // rtcManager.setDateTime(year, month, day, hour, minute, second);
+          // configMessage("Date time config", "Done!");
+        }
+      }
+
       rtcManager.startStopWatch();
       irManager.resume();
     }
@@ -199,12 +226,6 @@ void loop() {
       isInMinimunHourConfig = false;
       isInMaximumHourConfig = false;
       isDateTimeConfig = false;
-      if (minimumHour != EEPROM.read(0)) {
-        EEPROM.write(0, minimumHour);
-      }
-      if (maximumHour != EEPROM.read(1)) {
-        EEPROM.write(1, maximumHour);
-      }
     }
   }
 
