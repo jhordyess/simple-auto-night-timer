@@ -64,7 +64,7 @@ void setup() {
   configMessage("Init... EEPROM");
   eepromManager.initialize(MINIMUM_HOUR, MAXIMUM_HOUR);
 
-  const String message = "Turn at " + String(eepromManager.getMinimumHourChar()) + " - " + String(eepromManager.getMaximumHourChar());
+  const String message = "Turn at " + String(eepromManager.getHoursChar());
   configMessage("Ready to go!", message.c_str());
   lcdManager.clear();
 }
@@ -78,7 +78,9 @@ void loop() {
     Serial.println(date);
     Serial.println(time);
 
-    if (rtcManager.isHourInRange(eepromManager.getMinimumHour(), eepromManager.getMaximumHour())) {
+    int minimumHour, maximumHour;
+    eepromManager.getHours(minimumHour, maximumHour);
+    if (rtcManager.isHourInRange(minimumHour, maximumHour)) {
       digitalWrite(RELAY_PIN, HIGH);
       lcdManager.displayStatus(" ON");
       Serial.println("ON");
@@ -116,20 +118,12 @@ void loop() {
       else if (irManager.isBtn1()) {
         if (state != MINIMUM_HOUR_CONFIG) {
           state = MINIMUM_HOUR_CONFIG;
-          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
+          configMessage("Range config Min", eepromManager.getHoursChar());
         }
         //...
       }
 
       else if (irManager.isBtn2()) {
-        if (state != MAXIMUM_HOUR_CONFIG) {
-          state = MAXIMUM_HOUR_CONFIG;
-          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
-        }
-        //...
-      }
-
-      else if (irManager.isBtn3()) {
         if (state != DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_YEAR;
           rtcManager.setAuxDateTime();
@@ -138,7 +132,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtn4()) {
+      else if (irManager.isBtn3()) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
         digitalWrite(RELAY_PIN, forceRelayOn ? HIGH : LOW);
@@ -147,10 +141,10 @@ void loop() {
       else if (irManager.isBtnLeft()) {
         if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.decreaseMinimumHour();
-          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
+          configMessage("Range config Min", eepromManager.getHoursChar());
         } else if (state == MAXIMUM_HOUR_CONFIG) {
           eepromManager.decreaseMaximumHour();
-          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
+          configMessage("Range config Max", eepromManager.getHoursChar());
         } else if (state == DATE_CONFIG_YEAR) {
           rtcManager.subYearAuxDate();
           configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
@@ -174,10 +168,10 @@ void loop() {
       else if (irManager.isBtnRight()) {
         if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.increaseMinimumHour();
-          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
+          configMessage("Range config Min", eepromManager.getHoursChar());
         } else if (state == MAXIMUM_HOUR_CONFIG) {
           eepromManager.increaseMaximumHour();
-          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
+          configMessage("Range config Max", eepromManager.getHoursChar());
         } else if (state == DATE_CONFIG_YEAR) {
           rtcManager.addYearAuxDate();
           configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
@@ -199,7 +193,13 @@ void loop() {
       }
 
       else if (irManager.isBtnUp()) {
-        if (state == DATE_CONFIG_YEAR) {
+        if (state == MINIMUM_HOUR_CONFIG) {
+          state = MAXIMUM_HOUR_CONFIG;
+          configMessage("Range config Max", eepromManager.getHoursChar());
+        } else if (state == MAXIMUM_HOUR_CONFIG) {
+          state = MINIMUM_HOUR_CONFIG;
+          configMessage("Range config Min", eepromManager.getHoursChar());
+        } else if (state == DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_MINUTE;
           configMessage("Date config mm", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
@@ -219,7 +219,13 @@ void loop() {
       }
 
       else if (irManager.isBtnDown()) {
-        if (state == DATE_CONFIG_YEAR) {
+        if (state == MINIMUM_HOUR_CONFIG) {
+          state = MAXIMUM_HOUR_CONFIG;
+          configMessage("Range config Max", eepromManager.getHoursChar());
+        } else if (state == MAXIMUM_HOUR_CONFIG) {
+          state = MINIMUM_HOUR_CONFIG;
+          configMessage("Range config Min", eepromManager.getHoursChar());
+        } else if (state == DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_MONTH;
           configMessage("Date config MM", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
@@ -239,27 +245,15 @@ void loop() {
       }
 
       else if (irManager.isBtnOk()) {
-        if (state == MINIMUM_HOUR_CONFIG) {
-          if (eepromManager.isMinimumHourChanged()) {
-            eepromManager.saveMinimumHour();
-            configMessage("Minimum hour", "Done!");
-          } else {
-            configMessage("Minimum hour", "No changes");
-          }
+        if (state == MINIMUM_HOUR_CONFIG || state == MAXIMUM_HOUR_CONFIG) {
+          eepromManager.saveHours();
+          configMessage("Range config", "Done!");
           state = CONFIG_MODE;
           configMessage("Config mode");
-        } else if (state == MAXIMUM_HOUR_CONFIG) {
-          if (eepromManager.isMaximumHourChanged()) {
-            eepromManager.saveMaximumHour();
-            configMessage("Maximum hour", "Done!");
-          } else {
-            configMessage("Maximum hour", "No changes");
-          }
-          state = CONFIG_MODE;
-          configMessage("Config mode");
-        } else if (state == DATE_CONFIG_YEAR || state == DATE_CONFIG_MONTH || state == DATE_CONFIG_DAY || state == DATE_CONFIG_HOUR || state == DATE_CONFIG_MINUTE) {
+        } else if (state == DATE_CONFIG_YEAR || state == DATE_CONFIG_MONTH || state == DATE_CONFIG_DAY ||
+                   state == DATE_CONFIG_HOUR || state == DATE_CONFIG_MINUTE) {
           rtcManager.adjustDate();
-          configMessage("Date config", "Done!");
+          configMessage("Date Time config", "Done!");
           state = CONFIG_MODE;
           configMessage("Config mode");
         }
