@@ -54,7 +54,7 @@ void setup() {
 
   configMessage("Init... Relay");
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH);
+  digitalWrite(RELAY_PIN, LOW);
 
   configMessage("Init... IR");
   irManager.initialize();
@@ -86,11 +86,11 @@ void loop() {
     Serial.println(time);
 
     if (rtcManager.isHourInRange(minimumHour, maximumHour)) {
-      digitalWrite(RELAY_PIN, LOW);
+      digitalWrite(RELAY_PIN, HIGH);
       lcdManager.displayStatus(" ON");
       Serial.println("ON");
     } else {
-      digitalWrite(RELAY_PIN, HIGH);
+      digitalWrite(RELAY_PIN, LOW);
       lcdManager.displayStatus("OFF");
       Serial.println("OFF");
     }
@@ -173,7 +173,7 @@ void loop() {
       else if (irManager.isBtn5()) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
-        digitalWrite(RELAY_PIN, forceRelayOn ? LOW : HIGH);
+        digitalWrite(RELAY_PIN, forceRelayOn ? HIGH : LOW);
       }
 
       else if (irManager.isBtnLeft()) {
