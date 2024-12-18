@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <EEPROM.h>
+#include "EepromManager.h"
 #include "LCDManager.h"
 #include "RTCManager.h"
 #include "IRManager.h"
@@ -29,8 +29,8 @@ void configMessage(const char *message, const char *secondMessage) {
 
 RTCManager rtcManager(configMessage);
 IRManager irManager(RECV_PIN);
+EepromManager eepromManager;
 
-int minimumHour, maximumHour;
 bool isInConfigMode = false;
 bool forceRelayOn = false;
 bool isInMinimunHourConfig = false;
@@ -60,18 +60,9 @@ void setup() {
   irManager.initialize();
 
   configMessage("Init... EEPROM");
-  minimumHour = EEPROM.read(0);
-  maximumHour = EEPROM.read(1);
+  eepromManager.initialize(MINIMUM_HOUR, MAXIMUM_HOUR);
 
-  // If EEPROM values are not set, use default values
-  if (minimumHour == 255) {
-    minimumHour = MINIMUM_HOUR;
-  }
-  if (maximumHour == 255) {
-    maximumHour = MAXIMUM_HOUR;
-  }
-
-  const String message = "Turn at " + String(minimumHour) + " - " + String(maximumHour);
+  const String message = "Turn at " + String(eepromManager.getMinimumHourChar()) + " - " + String(eepromManager.getMaximumHourChar());
   configMessage("Ready to go!", message.c_str());
   lcdManager.clear();
 }
@@ -85,7 +76,7 @@ void loop() {
     Serial.println(date);
     Serial.println(time);
 
-    if (rtcManager.isHourInRange(minimumHour, maximumHour)) {
+    if (rtcManager.isHourInRange(eepromManager.getMinimumHour(), eepromManager.getMaximumHour())) {
       digitalWrite(RELAY_PIN, HIGH);
       lcdManager.displayStatus(" ON");
       Serial.println("ON");
@@ -121,6 +112,7 @@ void loop() {
           configMessage("Config mode");
         } else {
           configMessage("Normal mode");
+          eepromManager.resetLoadedValues();
           rtcManager.resetStopWatch();
           isInConfigMode = forceRelayOn = false;
         }
@@ -131,7 +123,7 @@ void loop() {
           isInMinimunHourConfig = true;
           isInMaximumHourConfig = isDateConfig = isTimeConfig = false;
           isYearConfig = isMonthConfig = isDayConfig = isHourConfig = isMinuteConfig = false;
-          configMessage("Minimum hour", String(minimumHour).c_str());
+          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
         }
         //...
       }
@@ -141,7 +133,7 @@ void loop() {
           isInMaximumHourConfig = true;
           isInMinimunHourConfig = isDateConfig = isTimeConfig = false;
           isYearConfig = isMonthConfig = isDayConfig = isHourConfig = isMinuteConfig = false;
-          configMessage("Maximum hour", String(maximumHour).c_str());
+          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         }
         //...
       }
@@ -178,17 +170,11 @@ void loop() {
 
       else if (irManager.isBtnLeft()) {
         if (isInMinimunHourConfig) {
-          minimumHour--;
-          if (minimumHour < 0) {
-            minimumHour = 23;
-          }
-          configMessage("Minimum hour", String(minimumHour).c_str());
+          eepromManager.decreaseMinimumHour();
+          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
         } else if (isInMaximumHourConfig) {
-          maximumHour--;
-          if (maximumHour < 0) {
-            maximumHour = 23;
-          }
-          configMessage("Maximum hour", String(maximumHour).c_str());
+          eepromManager.decreaseMaximumHour();
+          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         } else if (isDateConfig) {
           if (isYearConfig) {
             year--;
@@ -234,18 +220,11 @@ void loop() {
 
       else if (irManager.isBtnRight()) {
         if (isInMinimunHourConfig) {
-          minimumHour++;
-          if (minimumHour > 23) {
-            // TODO: Improve comparing with the maximumHour..
-            minimumHour = 0;
-          }
-          configMessage("Minimum hour", String(minimumHour).c_str());
+          eepromManager.increaseMinimumHour();
+          configMessage("Minimum hour", eepromManager.getMinimumHourChar());
         } else if (isInMaximumHourConfig) {
-          maximumHour++;
-          if (maximumHour > 23) {
-            maximumHour = 0;
-          }
-          configMessage("Maximum hour", String(maximumHour).c_str());
+          eepromManager.increaseMaximumHour();
+          configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         } else if (isDateConfig) {
           if (isYearConfig) {
             year++;
@@ -359,8 +338,8 @@ void loop() {
 
       else if (irManager.isBtnOk()) {
         if (isInMinimunHourConfig) {
-          if (minimumHour != EEPROM.read(0)) {
-            EEPROM.write(0, minimumHour);
+          if (eepromManager.isMinimumHourChanged()) {
+            eepromManager.saveMinimumHour();
             configMessage("Minimum hour", "Done!");
             isInMinimunHourConfig = false;
           } else {
@@ -368,8 +347,8 @@ void loop() {
           }
           configMessage("Config mode");
         } else if (isInMaximumHourConfig) {
-          if (maximumHour != EEPROM.read(1)) {
-            EEPROM.write(1, maximumHour);
+          if (eepromManager.isMaximumHourChanged()) {
+            eepromManager.saveMaximumHour();
             configMessage("Maximum hour", "Done!");
             isInMaximumHourConfig = false;
           } else {
@@ -398,6 +377,7 @@ void loop() {
     if (rtcManager.getElapsedStopWatchTime() > 10) {
       configMessage("Normal mode");
       rtcManager.resetStopWatch();
+      eepromManager.resetLoadedValues();
       isInConfigMode = forceRelayOn = false;
       isInMinimunHourConfig = isInMaximumHourConfig = false;
       isDateConfig = isYearConfig = isMonthConfig = isDayConfig = false;
