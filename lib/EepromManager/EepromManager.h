@@ -8,14 +8,9 @@ public:
   EepromManager();
   EepromManager(uint8_t minAddress, uint8_t maxAddress);
   void initialize(uint8_t defaultMin, uint8_t defaultMax);
-  uint8_t getMinimumHour();
-  char *getMinimumHourChar();
-  uint8_t getMaximumHour();
-  char *getMaximumHourChar();
-  void saveMinimumHour();
-  void saveMaximumHour();
-  bool isMinimumHourChanged();
-  bool isMaximumHourChanged();
+  void getHours(int &minHour, int &maxHour);
+  char *getHoursChar();
+  void saveHours();
   void increaseMinimumHour();
   void decreaseMinimumHour();
   void increaseMaximumHour();
@@ -30,6 +25,8 @@ private:
   void increaseHour(uint8_t &hour);
   void decreaseHour(uint8_t &hour);
   char *getHourChar(uint8_t &hour);
+  bool isMinimumHourChanged();
+  bool isMaximumHourChanged();
 };
 
 #endif

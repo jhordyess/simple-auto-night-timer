@@ -1,5 +1,4 @@
 #include "EepromManager.h"
-
 #include <EEPROM.h>
 
 EepromManager::EepromManager() {}
@@ -20,42 +19,27 @@ void EepromManager::initialize(uint8_t defaultMin, uint8_t defaultMax) {
   }
 }
 
-uint8_t EepromManager::getMinimumHour() {
-  return minimumHour;
+void EepromManager::getHours(int &minHour, int &maxHour) {
+  minHour = minimumHour;
+  maxHour = maximumHour;
 }
 
-char *EepromManager::getMinimumHourChar() {
-  return getHourChar(minimumHour);
+char *EepromManager::getHoursChar() {
+  static char hours[6] = {
+      getHourChar(minimumHour)[0], getHourChar(minimumHour)[1], '-',
+      getHourChar(maximumHour)[0], getHourChar(maximumHour)[1], '\0'};
+  return hours;
 }
 
-uint8_t EepromManager::getMaximumHour() {
-  return maximumHour;
-}
-
-char *EepromManager::getMaximumHourChar() {
-  return getHourChar(maximumHour);
-}
-
-void EepromManager::saveMinimumHour() {
-  // if (isMinimumHourChanged()) 🤔
-  EEPROM.write(minAddress, minimumHour);
-}
-
-void EepromManager::saveMaximumHour() {
-  // if (isMaximumHourChanged()) 🤔
-  EEPROM.write(maxAddress, maximumHour);
-}
-
-bool EepromManager::isMinimumHourChanged() {
-  return minimumHour != EEPROM.read(minAddress);
-}
-
-bool EepromManager::isMaximumHourChanged() {
-  return maximumHour != EEPROM.read(maxAddress);
+void EepromManager::saveHours() {
+  if (isMinimumHourChanged())
+    EEPROM.write(minAddress, minimumHour);
+  if (isMaximumHourChanged())
+    EEPROM.write(maxAddress, maximumHour);
 }
 
 void EepromManager::increaseMinimumHour() {
-  // TODO: Improve comparing with the maximumHour..
+  // TODO: Improve comparing with the maximumHour... :thinking:
   increaseHour(minimumHour);
 }
 
@@ -95,6 +79,14 @@ void EepromManager::decreaseHour(uint8_t &hour) {
 char *EepromManager::getHourChar(uint8_t &hour) {
   char firstDigit = hour / 10 + '0';
   char secondDigit = hour % 10 + '0';
-  static char digits[3] = {firstDigit, secondDigit, '\0'};
+  static char digits[2] = {firstDigit, secondDigit};
   return digits;
+}
+
+bool EepromManager::isMinimumHourChanged() {
+  return minimumHour != EEPROM.read(minAddress);
+}
+
+bool EepromManager::isMaximumHourChanged() {
+  return maximumHour != EEPROM.read(maxAddress);
 }
