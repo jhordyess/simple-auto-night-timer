@@ -28,7 +28,7 @@ void configMessage(const char *message, const char *secondMessage) {
 }
 
 RTCManager rtcManager(configMessage);
-IRManager irManager(RECV_PIN);
+IRManager irManager;
 EepromManager eepromManager;
 
 enum State {
@@ -59,7 +59,7 @@ void setup() {
   digitalWrite(RELAY_PIN, LOW);
 
   configMessage("Init... IR");
-  irManager.initialize();
+  irManager.initialize(RECV_PIN);
 
   configMessage("Init... EEPROM");
   eepromManager.initialize(MINIMUM_HOUR, MAXIMUM_HOUR);
@@ -91,7 +91,7 @@ void loop() {
     }
 
     if (irManager.decode()) {
-      if (irManager.isBtnOk()) {
+      if (irManager.isCommand(BTN_OK)) {
         state = CONFIG_MODE;
         configMessage("Config mode");
         rtcManager.startStopWatch();
@@ -101,7 +101,7 @@ void loop() {
     delay(300);
   } else {
     if (irManager.decode()) {
-      if (irManager.isBtnAsterisk()) {
+      if (irManager.isCommand(BTN_ASTHERISK)) {
         if (state == CONFIG_MODE) {
           state = NORMAL_MODE;
           configMessage("Normal mode");
@@ -115,7 +115,7 @@ void loop() {
         }
       }
 
-      else if (irManager.isBtn1()) {
+      else if (irManager.isCommand(BTN_1)) {
         if (state != MINIMUM_HOUR_CONFIG) {
           state = MINIMUM_HOUR_CONFIG;
           configMessage("Range config Min", eepromManager.getHoursChar());
@@ -123,7 +123,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtn2()) {
+      else if (irManager.isCommand(BTN_2)) {
         if (state != DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_YEAR;
           rtcManager.setAuxDateTime();
@@ -132,13 +132,13 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtn3()) {
+      else if (irManager.isCommand(BTN_3)) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
         digitalWrite(RELAY_PIN, forceRelayOn ? HIGH : LOW);
       }
 
-      else if (irManager.isBtnLeft()) {
+      else if (irManager.isCommand(BTN_LEFT)) {
         if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.decreaseMinimumHour();
           configMessage("Range config Min", eepromManager.getHoursChar());
@@ -165,7 +165,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtnRight()) {
+      else if (irManager.isCommand(BTN_RIGHT)) {
         if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.increaseMinimumHour();
           configMessage("Range config Min", eepromManager.getHoursChar());
@@ -192,7 +192,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtnUp()) {
+      else if (irManager.isCommand(BTN_UP)) {
         if (state == MINIMUM_HOUR_CONFIG) {
           state = MAXIMUM_HOUR_CONFIG;
           configMessage("Range config Max", eepromManager.getHoursChar());
@@ -218,7 +218,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtnDown()) {
+      else if (irManager.isCommand(BTN_DOWN)) {
         if (state == MINIMUM_HOUR_CONFIG) {
           state = MAXIMUM_HOUR_CONFIG;
           configMessage("Range config Max", eepromManager.getHoursChar());
@@ -244,7 +244,7 @@ void loop() {
         //...
       }
 
-      else if (irManager.isBtnOk()) {
+      else if (irManager.isCommand(BTN_OK)) {
         if (state == MINIMUM_HOUR_CONFIG || state == MAXIMUM_HOUR_CONFIG) {
           eepromManager.saveHours();
           configMessage("Range config", "Done!");
