@@ -39,14 +39,12 @@ enum State {
   DATE_CONFIG_YEAR,
   DATE_CONFIG_MONTH,
   DATE_CONFIG_DAY,
-  TIME_CONFIG_HOUR,
-  TIME_CONFIG_MINUTE
+  DATE_CONFIG_HOUR,
+  DATE_CONFIG_MINUTE
 };
 
 State state = NORMAL_MODE;
 bool forceRelayOn = false;
-int year, month, day;
-int hour, minute;
 
 void setup() {
   Serial.begin(9600);
@@ -134,24 +132,13 @@ void loop() {
       else if (irManager.isBtn3()) {
         if (state != DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_YEAR;
-          rtcManager.getDate(&year, &month, &day);
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config YYYY", message.c_str());
+          rtcManager.setAuxDateTime();
+          configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
         }
         //...
       }
 
       else if (irManager.isBtn4()) {
-        if (state != TIME_CONFIG_HOUR) {
-          state = TIME_CONFIG_HOUR;
-          rtcManager.getTime(&hour, &minute);
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config hh", message.c_str());
-        }
-        //...
-      }
-
-      else if (irManager.isBtn5()) {
         forceRelayOn = !forceRelayOn;
         configMessage("Forced relay", forceRelayOn ? "ON" : "OFF");
         digitalWrite(RELAY_PIN, forceRelayOn ? HIGH : LOW);
@@ -165,40 +152,20 @@ void loop() {
           eepromManager.decreaseMaximumHour();
           configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         } else if (state == DATE_CONFIG_YEAR) {
-          year--;
-          if (year < 2021) {
-            year = 2021;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config YYYY", message.c_str());
+          rtcManager.subYearAuxDate();
+          configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
-          month--;
-          if (month < 1) {
-            month = 12;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config MM", message.c_str());
+          rtcManager.subMonthAuxDate();
+          configMessage("Date config MM", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_DAY) {
-          day--;
-          if (day < 1) {
-            day = 31;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config DD", message.c_str());
-        } else if (state == TIME_CONFIG_HOUR) {
-          hour--;
-          if (hour < 0) {
-            hour = 23;
-          }
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config hh", message.c_str());
-        } else if (state == TIME_CONFIG_MINUTE) {
-          minute--;
-          if (minute < 0) {
-            minute = 59;
-          }
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config mm", message.c_str());
+          rtcManager.subDayAuxDate();
+          configMessage("Date config DD", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_HOUR) {
+          rtcManager.subHourAuxTime();
+          configMessage("Time config hh", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_MINUTE) {
+          rtcManager.subMinuteAuxTime();
+          configMessage("Time config mm", rtcManager.getAuxDateTime().c_str());
         }
 
         //...
@@ -212,66 +179,41 @@ void loop() {
           eepromManager.increaseMaximumHour();
           configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         } else if (state == DATE_CONFIG_YEAR) {
-          year++;
-          if (year > 2099) {
-            year = 2021;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config YYYY", message.c_str());
+          rtcManager.addYearAuxDate();
+          configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
-          month++;
-          if (month > 12) {
-            month = 1;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config MM", message.c_str());
+          rtcManager.addMonthAuxDate();
+          configMessage("Date config MM", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_DAY) {
-          day++;
-          if (day > 31) {
-            day = 1;
-          }
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config DD", message.c_str());
+          rtcManager.addDayAuxDate();
+          configMessage("Date config DD", rtcManager.getAuxDateTime().c_str());
 
-        } else if (state == TIME_CONFIG_HOUR) {
-          hour++;
-          if (hour > 23) {
-            hour = 0;
-          }
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config hh", message.c_str());
-        } else if (state == TIME_CONFIG_MINUTE) {
-          minute++;
-          if (minute > 59) {
-            minute = 0;
-          }
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config mm", message.c_str());
+        } else if (state == DATE_CONFIG_HOUR) {
+          rtcManager.addHourAuxTime();
+          configMessage("Time config hh", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_MINUTE) {
+          rtcManager.addMinuteAuxTime();
+          configMessage("Time config mm", rtcManager.getAuxDateTime().c_str());
         }
         //...
       }
 
       else if (irManager.isBtnUp()) {
         if (state == DATE_CONFIG_YEAR) {
-          state = DATE_CONFIG_DAY;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config DD", message.c_str());
+          state = DATE_CONFIG_MINUTE;
+          configMessage("Date config mm", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
           state = DATE_CONFIG_YEAR;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config YYYY", message.c_str());
+          configMessage("Date config YYYY", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_DAY) {
           state = DATE_CONFIG_MONTH;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config MM", message.c_str());
-        } else if (state == TIME_CONFIG_HOUR) {
-          state = TIME_CONFIG_MINUTE;
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config mm", message.c_str());
-        } else if (state == TIME_CONFIG_MINUTE) {
-          state = TIME_CONFIG_HOUR;
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config hh", message.c_str());
+          configMessage("Date config MM", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_HOUR) {
+          state = DATE_CONFIG_DAY;
+          configMessage("Time config DD", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_MINUTE) {
+          state = DATE_CONFIG_HOUR;
+          configMessage("Time config hh", rtcManager.getAuxDateTime().c_str());
         }
         //...
       }
@@ -279,24 +221,19 @@ void loop() {
       else if (irManager.isBtnDown()) {
         if (state == DATE_CONFIG_YEAR) {
           state = DATE_CONFIG_MONTH;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config MM", message.c_str());
+          configMessage("Date config MM", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_MONTH) {
           state = DATE_CONFIG_DAY;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config DD", message.c_str());
+          configMessage("Date config DD", rtcManager.getAuxDateTime().c_str());
         } else if (state == DATE_CONFIG_DAY) {
+          state = DATE_CONFIG_HOUR;
+          configMessage("Date config hh", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_HOUR) {
+          state = DATE_CONFIG_MINUTE;
+          configMessage("Time config mm", rtcManager.getAuxDateTime().c_str());
+        } else if (state == DATE_CONFIG_MINUTE) {
           state = DATE_CONFIG_YEAR;
-          String message = String(year) + " - " + String(month) + " - " + String(day);
-          configMessage("Date config YYYY", message.c_str());
-        } else if (state == TIME_CONFIG_HOUR) {
-          state = TIME_CONFIG_HOUR;
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config mm", message.c_str());
-        } else if (state == TIME_CONFIG_MINUTE) {
-          state = TIME_CONFIG_MINUTE;
-          String message = String(hour) + " : " + String(minute);
-          configMessage("Time config hh", message.c_str());
+          configMessage("Time config YYYY", rtcManager.getAuxDateTime().c_str());
         }
         //...
       }
@@ -320,14 +257,9 @@ void loop() {
           }
           state = CONFIG_MODE;
           configMessage("Config mode");
-        } else if (state == DATE_CONFIG_YEAR || state == DATE_CONFIG_MONTH || state == DATE_CONFIG_DAY) {
-          rtcManager.setDate(year, month, day);
+        } else if (state == DATE_CONFIG_YEAR || state == DATE_CONFIG_MONTH || state == DATE_CONFIG_DAY || state == DATE_CONFIG_HOUR || state == DATE_CONFIG_MINUTE) {
+          rtcManager.adjustDate();
           configMessage("Date config", "Done!");
-          state = CONFIG_MODE;
-          configMessage("Config mode");
-        } else if (state == TIME_CONFIG_HOUR || state == TIME_CONFIG_MINUTE) {
-          rtcManager.setTime(hour, minute);
-          configMessage("Time config", "Done!");
           state = CONFIG_MODE;
           configMessage("Config mode");
         }
