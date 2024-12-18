@@ -13,10 +13,19 @@ public:
   void getCurrentDateTime(char *date, char *time);
   bool isHourInRange(int minimumHour, int maximumHour);
 
-  void getDate(int *year, int *month, int *day);
-  void getTime(int *hour, int *minute);
-  void setDate(int year, int month, int day);
-  void setTime(int hour, int minute);
+  void setAuxDateTime();
+  String getAuxDateTime();
+  void adjustDate();
+  void addYearAuxDate();
+  void addMonthAuxDate();
+  void addDayAuxDate();
+  void addHourAuxTime();
+  void addMinuteAuxTime();
+  void subYearAuxDate();
+  void subMonthAuxDate();
+  void subDayAuxDate();
+  void subHourAuxTime();
+  void subMinuteAuxTime();
 
   void startStopWatch();
   void resetStopWatch();
@@ -26,6 +35,7 @@ private:
   RTC_DS3231 rtc;
   DisplayCallback displayCallback;
   DateTime stopWatch;
+  DateTime auxDateTime;
 };
 
 #endif

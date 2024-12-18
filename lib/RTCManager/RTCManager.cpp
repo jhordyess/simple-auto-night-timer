@@ -15,8 +15,6 @@ void RTCManager::initialize() {
     displayCallback("RTC lost power");
   }
   // realTimeClock.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // char date[16] = "DDD,DD-MMM-YYYY";
-  // char time[9] = "hh:mm:ss";
   rtc.disable32K();
 }
 
@@ -32,28 +30,45 @@ bool RTCManager::isHourInRange(int minimumHour, int maximumHour) {
   return (currentHour >= minimumHour && currentHour < maximumHour);
 }
 
-void RTCManager::getDate(int *year, int *month, int *day) {
-  DateTime currentTime = rtc.now();
-  *year = currentTime.year();
-  *month = currentTime.month();
-  *day = currentTime.day();
+// Auxiliar DateTime
+
+void RTCManager::setAuxDateTime() {
+  DateTime currentDateTime = rtc.now();
+
+  auxDateTime = DateTime(
+      currentDateTime.year(), currentDateTime.month(), currentDateTime.day(),
+      currentDateTime.hour(), currentDateTime.minute(), 0);
 }
 
-void RTCManager::getTime(int *hour, int *minute) {
-  DateTime currentTime = rtc.now();
-  *hour = currentTime.hour();
-  *minute = currentTime.minute();
+String RTCManager::getAuxDateTime() {
+  return String(auxDateTime.year()) + "-" + String(auxDateTime.month()) + "-" + String(auxDateTime.day()) + " " + String(auxDateTime.hour()) + ":" + String(auxDateTime.minute());
 }
 
-void RTCManager::setDate(int year, int month, int day) {
-  DateTime currentTime = rtc.now();
-  rtc.adjust(DateTime(year, month, day, currentTime.hour(), currentTime.minute(), currentTime.second()));
+void RTCManager::adjustDate() {
+  rtc.adjust(auxDateTime);
 }
 
-void RTCManager::setTime(int hour, int minute) {
-  DateTime currentTime = rtc.now();
-  rtc.adjust(DateTime(currentTime.year(), currentTime.month(), currentTime.day(), hour, minute, 0));
-}
+void RTCManager::addYearAuxDate() { auxDateTime = auxDateTime + TimeSpan(365, 0, 0, 0); }
+
+void RTCManager::addMonthAuxDate() { auxDateTime = auxDateTime + TimeSpan(30, 0, 0, 0); }
+
+void RTCManager::addDayAuxDate() { auxDateTime = auxDateTime + TimeSpan(1, 0, 0, 0); }
+
+void RTCManager::addHourAuxTime() { auxDateTime = auxDateTime + TimeSpan(0, 1, 0, 0); }
+
+void RTCManager::addMinuteAuxTime() { auxDateTime = auxDateTime + TimeSpan(0, 0, 1, 0); }
+
+void RTCManager::subYearAuxDate() { auxDateTime = auxDateTime - TimeSpan(365, 0, 0, 0); }
+
+void RTCManager::subMonthAuxDate() { auxDateTime = auxDateTime - TimeSpan(30, 0, 0, 0); }
+
+void RTCManager::subDayAuxDate() { auxDateTime = auxDateTime - TimeSpan(1, 0, 0, 0); }
+
+void RTCManager::subHourAuxTime() { auxDateTime = auxDateTime - TimeSpan(0, 1, 0, 0); }
+
+void RTCManager::subMinuteAuxTime() { auxDateTime = auxDateTime - TimeSpan(0, 0, 1, 0); }
+
+// StopWatch
 
 void RTCManager::startStopWatch() {
   stopWatch = rtc.now();
