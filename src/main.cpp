@@ -31,18 +31,22 @@ RTCManager rtcManager(configMessage);
 IRManager irManager(RECV_PIN);
 EepromManager eepromManager;
 
-bool isInConfigMode = false;
+enum State {
+  NORMAL_MODE,
+  CONFIG_MODE,
+  MINIMUM_HOUR_CONFIG,
+  MAXIMUM_HOUR_CONFIG,
+  DATE_CONFIG_YEAR,
+  DATE_CONFIG_MONTH,
+  DATE_CONFIG_DAY,
+  TIME_CONFIG_HOUR,
+  TIME_CONFIG_MINUTE
+};
+
+State state = NORMAL_MODE;
 bool forceRelayOn = false;
-bool isInMinimunHourConfig = false;
-bool isInMaximumHourConfig = false;
-
-bool isDateConfig = false;
 int year, month, day;
-bool isYearConfig, isMonthConfig, isDayConfig = false;
-
-bool isTimeConfig = false;
 int hour, minute;
-bool isHourConfig, isMinuteConfig = false;
 
 void setup() {
   Serial.begin(9600);
@@ -68,7 +72,7 @@ void setup() {
 }
 
 void loop() {
-  if (!isInConfigMode) {
+  if (state == NORMAL_MODE) {
     char date[16] = "DDD MMM DD YYYY", time[9] = "hh:mm:ss";
     rtcManager.getCurrentDateTime(date, time);
 
@@ -88,7 +92,7 @@ void loop() {
 
     if (irManager.decode()) {
       if (irManager.isBtnOk()) {
-        isInConfigMode = true;
+        state = CONFIG_MODE;
         configMessage("Config mode");
         rtcManager.startStopWatch();
       }
@@ -98,51 +102,38 @@ void loop() {
   } else {
     if (irManager.decode()) {
       if (irManager.isBtnAsterisk()) {
-        if (isInMinimunHourConfig) {
-          isInMinimunHourConfig = false;
-          configMessage("Config mode");
-        } else if (isInMaximumHourConfig) {
-          isInMaximumHourConfig = false;
-          configMessage("Config mode");
-        } else if (isDateConfig) {
-          isDateConfig = isYearConfig = isMonthConfig = isDayConfig = false;
-          configMessage("Config mode");
-        } else if (isTimeConfig) {
-          isTimeConfig = isHourConfig = isMinuteConfig = false;
-          configMessage("Config mode");
-        } else {
+        if (state == CONFIG_MODE) {
+          state = NORMAL_MODE;
           configMessage("Normal mode");
-          eepromManager.resetLoadedValues();
           rtcManager.resetStopWatch();
-          isInConfigMode = forceRelayOn = false;
+          eepromManager.resetLoadedValues();
+          forceRelayOn = false;
+        } else {
+          state = CONFIG_MODE;
+          configMessage("Config mode");
+          // rtcManager.startStopWatch();
         }
       }
 
       else if (irManager.isBtn1()) {
-        if (!isInMinimunHourConfig) {
-          isInMinimunHourConfig = true;
-          isInMaximumHourConfig = isDateConfig = isTimeConfig = false;
-          isYearConfig = isMonthConfig = isDayConfig = isHourConfig = isMinuteConfig = false;
+        if (state != MINIMUM_HOUR_CONFIG) {
+          state = MINIMUM_HOUR_CONFIG;
           configMessage("Minimum hour", eepromManager.getMinimumHourChar());
         }
         //...
       }
 
       else if (irManager.isBtn2()) {
-        if (!isInMaximumHourConfig) {
-          isInMaximumHourConfig = true;
-          isInMinimunHourConfig = isDateConfig = isTimeConfig = false;
-          isYearConfig = isMonthConfig = isDayConfig = isHourConfig = isMinuteConfig = false;
+        if (state != MAXIMUM_HOUR_CONFIG) {
+          state = MAXIMUM_HOUR_CONFIG;
           configMessage("Maximum hour", eepromManager.getMaximumHourChar());
         }
         //...
       }
 
       else if (irManager.isBtn3()) {
-        if (!isDateConfig) {
-          isDateConfig = isYearConfig = true;
-          isInMinimunHourConfig = isInMaximumHourConfig = isMinuteConfig = false;
-          isMonthConfig = isDayConfig = isHourConfig = isMinuteConfig = false;
+        if (state != DATE_CONFIG_YEAR) {
+          state = DATE_CONFIG_YEAR;
           rtcManager.getDate(&year, &month, &day);
           String message = String(year) + " - " + String(month) + " - " + String(day);
           configMessage("Date config YYYY", message.c_str());
@@ -151,10 +142,8 @@ void loop() {
       }
 
       else if (irManager.isBtn4()) {
-        if (!isTimeConfig) {
-          isTimeConfig = isHourConfig = true;
-          isInMinimunHourConfig = isInMaximumHourConfig = isDateConfig = false;
-          isYearConfig = isMonthConfig = isDayConfig = isMinuteConfig = false;
+        if (state != TIME_CONFIG_HOUR) {
+          state = TIME_CONFIG_HOUR;
           rtcManager.getTime(&hour, &minute);
           String message = String(hour) + " : " + String(minute);
           configMessage("Time config hh", message.c_str());
@@ -169,201 +158,177 @@ void loop() {
       }
 
       else if (irManager.isBtnLeft()) {
-        if (isInMinimunHourConfig) {
+        if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.decreaseMinimumHour();
           configMessage("Minimum hour", eepromManager.getMinimumHourChar());
-        } else if (isInMaximumHourConfig) {
+        } else if (state == MAXIMUM_HOUR_CONFIG) {
           eepromManager.decreaseMaximumHour();
           configMessage("Maximum hour", eepromManager.getMaximumHourChar());
-        } else if (isDateConfig) {
-          if (isYearConfig) {
-            year--;
-            if (year < 2021) {
-              year = 2021;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config YYYY", message.c_str());
-          } else if (isMonthConfig) {
-            month--;
-            if (month < 1) {
-              month = 12;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config MM", message.c_str());
-          } else if (isDayConfig) {
-            day--;
-            if (day < 1) {
-              day = 31;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config DD", message.c_str());
+        } else if (state == DATE_CONFIG_YEAR) {
+          year--;
+          if (year < 2021) {
+            year = 2021;
           }
-        } else if (isTimeConfig) {
-          if (isHourConfig) {
-            hour--;
-            if (hour < 0) {
-              hour = 23;
-            }
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config hh", message.c_str());
-          } else if (isMinuteConfig) {
-            minute--;
-            if (minute < 0) {
-              minute = 59;
-            }
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config mm", message.c_str());
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config YYYY", message.c_str());
+        } else if (state == DATE_CONFIG_MONTH) {
+          month--;
+          if (month < 1) {
+            month = 12;
           }
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config MM", message.c_str());
+        } else if (state == DATE_CONFIG_DAY) {
+          day--;
+          if (day < 1) {
+            day = 31;
+          }
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config DD", message.c_str());
+        } else if (state == TIME_CONFIG_HOUR) {
+          hour--;
+          if (hour < 0) {
+            hour = 23;
+          }
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config hh", message.c_str());
+        } else if (state == TIME_CONFIG_MINUTE) {
+          minute--;
+          if (minute < 0) {
+            minute = 59;
+          }
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config mm", message.c_str());
         }
+
         //...
       }
 
       else if (irManager.isBtnRight()) {
-        if (isInMinimunHourConfig) {
+        if (state == MINIMUM_HOUR_CONFIG) {
           eepromManager.increaseMinimumHour();
           configMessage("Minimum hour", eepromManager.getMinimumHourChar());
-        } else if (isInMaximumHourConfig) {
+        } else if (state == MAXIMUM_HOUR_CONFIG) {
           eepromManager.increaseMaximumHour();
           configMessage("Maximum hour", eepromManager.getMaximumHourChar());
-        } else if (isDateConfig) {
-          if (isYearConfig) {
-            year++;
-            if (year > 2099) {
-              year = 2021;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config YYYY", message.c_str());
-          } else if (isMonthConfig) {
-            month++;
-            if (month > 12) {
-              month = 1;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config MM", message.c_str());
-          } else if (isDayConfig) {
-            day++;
-            if (day > 31) {
-              day = 1;
-            }
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config DD", message.c_str());
+        } else if (state == DATE_CONFIG_YEAR) {
+          year++;
+          if (year > 2099) {
+            year = 2021;
           }
-        } else if (isTimeConfig) {
-          if (isHourConfig) {
-            hour++;
-            if (hour > 23) {
-              hour = 0;
-            }
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config hh", message.c_str());
-          } else if (isMinuteConfig) {
-            minute++;
-            if (minute > 59) {
-              minute = 0;
-            }
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config mm", message.c_str());
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config YYYY", message.c_str());
+        } else if (state == DATE_CONFIG_MONTH) {
+          month++;
+          if (month > 12) {
+            month = 1;
           }
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config MM", message.c_str());
+        } else if (state == DATE_CONFIG_DAY) {
+          day++;
+          if (day > 31) {
+            day = 1;
+          }
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config DD", message.c_str());
+
+        } else if (state == TIME_CONFIG_HOUR) {
+          hour++;
+          if (hour > 23) {
+            hour = 0;
+          }
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config hh", message.c_str());
+        } else if (state == TIME_CONFIG_MINUTE) {
+          minute++;
+          if (minute > 59) {
+            minute = 0;
+          }
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config mm", message.c_str());
         }
         //...
       }
 
       else if (irManager.isBtnUp()) {
-        if (isDateConfig) {
-          if (isYearConfig) {
-            isYearConfig = false;
-            isDayConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config DD", message.c_str());
-          } else if (isMonthConfig) {
-            isMonthConfig = false;
-            isYearConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config YYYY", message.c_str());
-          } else if (isDayConfig) {
-            isDayConfig = false;
-            isMonthConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config MM", message.c_str());
-          }
-        } else if (isTimeConfig) {
-          if (isHourConfig) {
-            isHourConfig = false;
-            isMinuteConfig = true;
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config mm", message.c_str());
-          } else if (isMinuteConfig) {
-            isMinuteConfig = false;
-            isHourConfig = true;
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config hh", message.c_str());
-          }
+        if (state == DATE_CONFIG_YEAR) {
+          state = DATE_CONFIG_DAY;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config DD", message.c_str());
+        } else if (state == DATE_CONFIG_MONTH) {
+          state = DATE_CONFIG_YEAR;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config YYYY", message.c_str());
+        } else if (state == DATE_CONFIG_DAY) {
+          state = DATE_CONFIG_MONTH;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config MM", message.c_str());
+        } else if (state == TIME_CONFIG_HOUR) {
+          state = TIME_CONFIG_MINUTE;
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config mm", message.c_str());
+        } else if (state == TIME_CONFIG_MINUTE) {
+          state = TIME_CONFIG_HOUR;
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config hh", message.c_str());
         }
         //...
       }
 
       else if (irManager.isBtnDown()) {
-        if (isDateConfig) {
-          if (isYearConfig) {
-            isYearConfig = false;
-            isMonthConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config MM", message.c_str());
-          } else if (isMonthConfig) {
-            isMonthConfig = false;
-            isDayConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config DD", message.c_str());
-          } else if (isDayConfig) {
-            isDayConfig = false;
-            isYearConfig = true;
-            String message = String(year) + " - " + String(month) + " - " + String(day);
-            configMessage("Date config YYYY", message.c_str());
-          }
-        } else if (isTimeConfig) {
-          if (isHourConfig) {
-            isHourConfig = false;
-            isMinuteConfig = true;
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config mm", message.c_str());
-          } else if (isMinuteConfig) {
-            isMinuteConfig = false;
-            isHourConfig = true;
-            String message = String(hour) + " : " + String(minute);
-            configMessage("Time config hh", message.c_str());
-          }
+        if (state == DATE_CONFIG_YEAR) {
+          state = DATE_CONFIG_MONTH;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config MM", message.c_str());
+        } else if (state == DATE_CONFIG_MONTH) {
+          state = DATE_CONFIG_DAY;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config DD", message.c_str());
+        } else if (state == DATE_CONFIG_DAY) {
+          state = DATE_CONFIG_YEAR;
+          String message = String(year) + " - " + String(month) + " - " + String(day);
+          configMessage("Date config YYYY", message.c_str());
+        } else if (state == TIME_CONFIG_HOUR) {
+          state = TIME_CONFIG_HOUR;
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config mm", message.c_str());
+        } else if (state == TIME_CONFIG_MINUTE) {
+          state = TIME_CONFIG_MINUTE;
+          String message = String(hour) + " : " + String(minute);
+          configMessage("Time config hh", message.c_str());
         }
         //...
       }
 
       else if (irManager.isBtnOk()) {
-        if (isInMinimunHourConfig) {
+        if (state == MINIMUM_HOUR_CONFIG) {
           if (eepromManager.isMinimumHourChanged()) {
             eepromManager.saveMinimumHour();
             configMessage("Minimum hour", "Done!");
-            isInMinimunHourConfig = false;
           } else {
             configMessage("Minimum hour", "No changes");
           }
+          state = CONFIG_MODE;
           configMessage("Config mode");
-        } else if (isInMaximumHourConfig) {
+        } else if (state == MAXIMUM_HOUR_CONFIG) {
           if (eepromManager.isMaximumHourChanged()) {
             eepromManager.saveMaximumHour();
             configMessage("Maximum hour", "Done!");
-            isInMaximumHourConfig = false;
           } else {
             configMessage("Maximum hour", "No changes");
           }
+          state = CONFIG_MODE;
           configMessage("Config mode");
-        } else if (isDateConfig) {
+        } else if (state == DATE_CONFIG_YEAR || state == DATE_CONFIG_MONTH || state == DATE_CONFIG_DAY) {
           rtcManager.setDate(year, month, day);
           configMessage("Date config", "Done!");
-          isDateConfig = isYearConfig = isMonthConfig = isDayConfig = false;
+          state = CONFIG_MODE;
           configMessage("Config mode");
-        } else if (isTimeConfig) {
+        } else if (state == TIME_CONFIG_HOUR || state == TIME_CONFIG_MINUTE) {
           rtcManager.setTime(hour, minute);
           configMessage("Time config", "Done!");
-          isTimeConfig = isHourConfig = isMinuteConfig = false;
+          state = CONFIG_MODE;
           configMessage("Config mode");
         }
         //...
@@ -375,13 +340,11 @@ void loop() {
 
     // Exit config mode after 10 seconds
     if (rtcManager.getElapsedStopWatchTime() > 10) {
+      state = NORMAL_MODE;
       configMessage("Normal mode");
       rtcManager.resetStopWatch();
       eepromManager.resetLoadedValues();
-      isInConfigMode = forceRelayOn = false;
-      isInMinimunHourConfig = isInMaximumHourConfig = false;
-      isDateConfig = isYearConfig = isMonthConfig = isDayConfig = false;
-      isTimeConfig = isHourConfig = isMinuteConfig = false;
+      forceRelayOn = false;
     }
   }
 }
