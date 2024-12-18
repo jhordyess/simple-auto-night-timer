@@ -25,10 +25,7 @@ uint8_t EepromManager::getMinimumHour() {
 }
 
 char *EepromManager::getMinimumHourChar() {
-  char firstDigit = minimumHour / 10 + '0';
-  char secondDigit = minimumHour % 10 + '0';
-  static char digits[3] = {firstDigit, secondDigit, '\0'};
-  return digits;
+  return getHourChar(minimumHour);
 }
 
 uint8_t EepromManager::getMaximumHour() {
@@ -36,10 +33,7 @@ uint8_t EepromManager::getMaximumHour() {
 }
 
 char *EepromManager::getMaximumHourChar() {
-  char firstDigit = maximumHour / 10 + '0';
-  char secondDigit = maximumHour % 10 + '0';
-  static char digits[3] = {firstDigit, secondDigit, '\0'};
-  return digits;
+  return getHourChar(maximumHour);
 }
 
 void EepromManager::saveMinimumHour() {
@@ -96,4 +90,11 @@ void EepromManager::decreaseHour(uint8_t &hour) {
   if (hour < 0) {
     hour = 23;
   }
+}
+
+char *EepromManager::getHourChar(uint8_t &hour) {
+  char firstDigit = hour / 10 + '0';
+  char secondDigit = hour % 10 + '0';
+  static char digits[3] = {firstDigit, secondDigit, '\0'};
+  return digits;
 }
