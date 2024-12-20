@@ -10,11 +10,10 @@ void EepromManager::initialize(uint8_t defaultMin, uint8_t defaultMax) {
   minimumHour = EEPROM.read(minAddress);
   maximumHour = EEPROM.read(maxAddress);
 
-  // If EEPROM values are not set, use default values
-  if (minimumHour == 255) {
+  if (minimumHour < 0 || minimumHour > 23) {
     minimumHour = defaultMin;
   }
-  if (maximumHour == 255) {
+  if (maximumHour < 0 || maximumHour > 23) {
     maximumHour = defaultMax;
   }
 
@@ -27,9 +26,13 @@ void EepromManager::getHours(int &minHour, int &maxHour) {
 }
 
 char *EepromManager::getHoursChar() {
-  static char hours[6] = {
-      getHourChar(minimumHour)[0], getHourChar(minimumHour)[1], '-',
-      getHourChar(maximumHour)[0], getHourChar(maximumHour)[1], '\0'};
+  static char hours[6];
+  hours[0] = (minimumHour / 10) + '0';
+  hours[1] = (minimumHour % 10) + '0';
+  hours[2] = '-';
+  hours[3] = (maximumHour / 10) + '0';
+  hours[4] = (maximumHour % 10) + '0';
+  hours[5] = '\0';
   return hours;
 }
 
@@ -76,13 +79,6 @@ void EepromManager::decreaseHour(uint8_t &hour) {
   if (hour < 0) {
     hour = 23;
   }
-}
-
-char *EepromManager::getHourChar(uint8_t &hour) {
-  char firstDigit = hour / 10 + '0';
-  char secondDigit = hour % 10 + '0';
-  static char digits[2] = {firstDigit, secondDigit};
-  return digits;
 }
 
 bool EepromManager::isMinimumHourDifferent() {

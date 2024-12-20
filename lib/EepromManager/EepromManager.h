@@ -24,7 +24,6 @@ private:
   uint8_t maximumHour;
   void increaseHour(uint8_t &hour);
   void decreaseHour(uint8_t &hour);
-  char *getHourChar(uint8_t &hour);
   bool isMinimumHourDifferent();
   bool isMaximumHourDifferent();
 };
