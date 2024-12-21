@@ -56,38 +56,65 @@ void RTCManager::addYearAuxDate() {
 }
 
 void RTCManager::addMonthAuxDate() {
+  if (auxDateTime.month() == 12) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month() + 1, auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
 }
 
 void RTCManager::addDayAuxDate() {
+  if (auxDateTime.day() == 31) { // TODO: Check if the month has 31 days
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day() + 1, auxDateTime.hour(), auxDateTime.minute(), 0);
 }
 
 void RTCManager::addHourAuxTime() {
+  if (auxDateTime.hour() == 23) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour() + 1, auxDateTime.minute(), 0);
 }
 
 void RTCManager::addMinuteAuxTime() {
+  if (auxDateTime.minute() == 59) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute() + 1, 0);
 }
 
 void RTCManager::subYearAuxDate() {
+  if (auxDateTime.year() == buildDateTime.year()) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year() - 1, auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
 }
 
 void RTCManager::subMonthAuxDate() {
+  if (auxDateTime.month() == 1) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month() - 1, auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
 }
 
 void RTCManager::subDayAuxDate() {
+  if (auxDateTime.day() == 1) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day() - 1, auxDateTime.hour(), auxDateTime.minute(), 0);
 }
 
 void RTCManager::subHourAuxTime() {
+  if (auxDateTime.hour() == 0) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour() - 1, auxDateTime.minute(), 0);
 }
 
 void RTCManager::subMinuteAuxTime() {
+  if (auxDateTime.minute() == 0) {
+    return;
+  }
   auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute() - 1, 0);
 }
 
