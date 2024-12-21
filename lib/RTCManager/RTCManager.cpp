@@ -51,25 +51,45 @@ void RTCManager::adjustDate() {
   rtc.adjust(auxDateTime);
 }
 
-void RTCManager::addYearAuxDate() { auxDateTime = auxDateTime + TimeSpan(365, 0, 0, 0); }
+void RTCManager::addYearAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year() + 1, auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::addMonthAuxDate() { auxDateTime = auxDateTime + TimeSpan(30, 0, 0, 0); }
+void RTCManager::addMonthAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month() + 1, auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::addDayAuxDate() { auxDateTime = auxDateTime + TimeSpan(1, 0, 0, 0); }
+void RTCManager::addDayAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day() + 1, auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::addHourAuxTime() { auxDateTime = auxDateTime + TimeSpan(0, 1, 0, 0); }
+void RTCManager::addHourAuxTime() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour() + 1, auxDateTime.minute(), 0);
+}
 
-void RTCManager::addMinuteAuxTime() { auxDateTime = auxDateTime + TimeSpan(0, 0, 1, 0); }
+void RTCManager::addMinuteAuxTime() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute() + 1, 0);
+}
 
-void RTCManager::subYearAuxDate() { auxDateTime = auxDateTime - TimeSpan(365, 0, 0, 0); }
+void RTCManager::subYearAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year() - 1, auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::subMonthAuxDate() { auxDateTime = auxDateTime - TimeSpan(30, 0, 0, 0); }
+void RTCManager::subMonthAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month() - 1, auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::subDayAuxDate() { auxDateTime = auxDateTime - TimeSpan(1, 0, 0, 0); }
+void RTCManager::subDayAuxDate() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day() - 1, auxDateTime.hour(), auxDateTime.minute(), 0);
+}
 
-void RTCManager::subHourAuxTime() { auxDateTime = auxDateTime - TimeSpan(0, 1, 0, 0); }
+void RTCManager::subHourAuxTime() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour() - 1, auxDateTime.minute(), 0);
+}
 
-void RTCManager::subMinuteAuxTime() { auxDateTime = auxDateTime - TimeSpan(0, 0, 1, 0); }
+void RTCManager::subMinuteAuxTime() {
+  auxDateTime = DateTime(auxDateTime.year(), auxDateTime.month(), auxDateTime.day(), auxDateTime.hour(), auxDateTime.minute() - 1, 0);
+}
 
 // StopWatch
 
