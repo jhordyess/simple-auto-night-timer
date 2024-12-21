@@ -14,8 +14,9 @@ void RTCManager::initialize() {
   if (rtc.lostPower()) {
     displayCallback("RTC lost power");
   }
-  // realTimeClock.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
   rtc.disable32K();
+  buildDateTime = DateTime(F(__DATE__), F(__TIME__));
 }
 
 void RTCManager::getCurrentDateTime(char *date, char *time) {
@@ -35,8 +36,10 @@ bool RTCManager::isHourInRange(int minimumHour, int maximumHour) {
 void RTCManager::setAuxDateTime() {
   DateTime currentDateTime = rtc.now();
 
+  int year = currentDateTime.year() < buildDateTime.year() ? buildDateTime.year() : currentDateTime.year();
+
   auxDateTime = DateTime(
-      currentDateTime.year(), currentDateTime.month(), currentDateTime.day(),
+      year, currentDateTime.month(), currentDateTime.day(),
       currentDateTime.hour(), currentDateTime.minute(), 0);
 }
 

@@ -36,6 +36,7 @@ private:
   DisplayCallback displayCallback;
   DateTime stopWatch;
   DateTime auxDateTime;
+  DateTime buildDateTime;
 };
 
 #endif
