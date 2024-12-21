@@ -68,17 +68,17 @@ void EepromManager::resetLoadedValues() {
 }
 
 void EepromManager::increaseHour(uint8_t &hour) {
-  hour++;
-  if (hour > 23) {
+  if (hour == 23)
     hour = 0;
-  }
+  else
+    hour++;
 }
 
 void EepromManager::decreaseHour(uint8_t &hour) {
-  hour--;
-  if (hour < 0) {
+  if (hour == 0)
     hour = 23;
-  }
+  else
+    hour--;
 }
 
 bool EepromManager::isMinimumHourDifferent() {
