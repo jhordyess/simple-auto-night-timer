@@ -44,7 +44,6 @@ void EepromManager::saveHours() {
 }
 
 void EepromManager::increaseMinimumHour() {
-  // TODO: Improve comparing with the maximumHour... :thinking:
   increaseHour(minimumHour);
 }
 
